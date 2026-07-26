@@ -2247,18 +2247,6 @@ func (c *DaemonConfig) Validate(vp *viper.Viper) error {
 			c.RoutingMode, RoutingModeTunnel, RoutingModeNative, RoutingModeHybrid)
 	}
 
-	cinfo := clustermeshTypes.ClusterInfo{
-		ID:                   c.ClusterID,
-		Name:                 c.ClusterName,
-		MaxConnectedClusters: c.MaxConnectedClusters,
-	}
-	if err := cinfo.InitClusterIDMax(); err != nil {
-		return err
-	}
-	if err := cinfo.Validate(); err != nil {
-		return err
-	}
-
 	if err := c.checkMapSizeLimits(); err != nil {
 		return err
 	}

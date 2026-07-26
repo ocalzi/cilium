@@ -70,6 +70,12 @@ var Cell = cell.Module(
 
 	cell.Config(types.DefaultQuirks),
 	cell.Invoke(func(info types.ClusterInfo, dcfg *option.DaemonConfig, cnimgr cni.CNIConfigManager, log *slog.Logger, quirks types.QuirksConfig) error {
+		if err := info.InitClusterIDMax(); err != nil {
+			return err
+		}
+		if err := info.Validate(); err != nil {
+			return err
+		}
 		err := info.ValidateBuggyClusterID(dcfg.IPAM, cnimgr.GetChainingMode())
 		if err != nil && quirks.AllowUnsafePolicySKBUsage {
 			log.Error("Detected clustermesh ID configuration that may cause connection impact", logfields.Error, err)
