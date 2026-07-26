@@ -14,6 +14,7 @@ import (
 	"github.com/cilium/cilium/api/v1/models"
 	restapi "github.com/cilium/cilium/api/v1/server/restapi/daemon"
 	"github.com/cilium/cilium/api/v1/server/restapi/endpoint"
+	cmtypes "github.com/cilium/cilium/pkg/clustermesh/types"
 	"github.com/cilium/cilium/pkg/debug"
 	"github.com/cilium/cilium/pkg/endpointmanager"
 	"github.com/cilium/cilium/pkg/loadbalancer"
@@ -26,6 +27,7 @@ import (
 type GetDebuginfoHandler struct {
 	endpointManager endpointmanager.EndpointManager
 	policyRepo      policy.PolicyRepository
+	clusterInfo     cmtypes.ClusterInfo
 	db              *statedb.DB
 	frontends       statedb.Table[*loadbalancer.Frontend]
 	wireguardAgent  wgTypes.Agent
@@ -63,7 +65,9 @@ func (h *GetDebuginfoHandler) Handle(params restapi.GetDebuginfoParams) middlewa
 		statedb.Collect(
 			statedb.Map(
 				h.frontends.All(h.db.ReadTxn()),
-				(*loadbalancer.Frontend).ToModel,
+				func(fe *loadbalancer.Frontend) *models.Service {
+					return fe.ToModel(h.clusterInfo.Name)
+				},
 			),
 		)
 

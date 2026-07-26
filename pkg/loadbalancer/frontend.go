@@ -18,7 +18,6 @@ import (
 
 	"github.com/cilium/cilium/api/v1/models"
 	cmtypes "github.com/cilium/cilium/pkg/clustermesh/types"
-	"github.com/cilium/cilium/pkg/option"
 	"github.com/cilium/cilium/pkg/time"
 )
 
@@ -146,7 +145,7 @@ func (fe *Frontend) TableRow() []string {
 	}
 }
 
-func (fe *Frontend) ToModel() *models.Service {
+func (fe *Frontend) ToModel(localClusterName string) *models.Service {
 	var natPolicy string
 
 	svc := fe.Service
@@ -174,7 +173,7 @@ func (fe *Frontend) ToModel() *models.Service {
 		spec.Flags.Type = string(SVCTypeLocalRedirect)
 	}
 
-	if svc.Name.Cluster() != option.Config.ClusterName {
+	if svc.Name.Cluster() != localClusterName {
 		spec.Flags.Cluster = svc.Name.Cluster()
 	}
 

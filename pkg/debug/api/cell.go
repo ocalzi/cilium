@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cast"
 
 	restapi "github.com/cilium/cilium/api/v1/server/restapi/daemon"
+	cmtypes "github.com/cilium/cilium/pkg/clustermesh/types"
 	"github.com/cilium/cilium/pkg/endpointmanager"
 	"github.com/cilium/cilium/pkg/loadbalancer"
 	"github.com/cilium/cilium/pkg/policy"
@@ -32,6 +33,7 @@ type debugAPIHandlerParams struct {
 	cell.In
 
 	DB              *statedb.DB
+	ClusterInfo     cmtypes.ClusterInfo
 	Frontends       statedb.Table[*loadbalancer.Frontend]
 	EndpointManager endpointmanager.EndpointManager
 	PolicyRepo      policy.PolicyRepository
@@ -52,6 +54,7 @@ func newDebugAPIHandler(params debugAPIHandlerParams) debugAPIHandlerOut {
 		GetDebuginfoHandler: &GetDebuginfoHandler{
 			endpointManager: params.EndpointManager,
 			policyRepo:      params.PolicyRepo,
+			clusterInfo:     params.ClusterInfo,
 			db:              params.DB,
 			frontends:       params.Frontends,
 			wireguardAgent:  params.WireguardAgent,

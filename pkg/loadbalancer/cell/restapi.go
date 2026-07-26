@@ -10,7 +10,9 @@ import (
 	"github.com/cilium/statedb"
 	"github.com/go-openapi/runtime/middleware"
 
+	"github.com/cilium/cilium/api/v1/models"
 	serviceapi "github.com/cilium/cilium/api/v1/server/restapi/service"
+	cmtypes "github.com/cilium/cilium/pkg/clustermesh/types"
 	"github.com/cilium/cilium/pkg/loadbalancer"
 	"github.com/cilium/cilium/pkg/logging/logfields"
 )
@@ -21,20 +23,22 @@ type serviceRestApiHandlerOut struct {
 	GetServiceHandler serviceapi.GetServiceHandler
 }
 
-func newServiceRestApiHandler(log *slog.Logger, db *statedb.DB, fes statedb.Table[*loadbalancer.Frontend]) serviceRestApiHandlerOut {
+func newServiceRestApiHandler(log *slog.Logger, clusterInfo cmtypes.ClusterInfo, db *statedb.DB, fes statedb.Table[*loadbalancer.Frontend]) serviceRestApiHandlerOut {
 	return serviceRestApiHandlerOut{
 		GetServiceHandler: &getServiceHandler{
-			log: log,
-			db:  db,
-			fes: fes,
+			log:         log,
+			clusterInfo: clusterInfo,
+			db:          db,
+			fes:         fes,
 		},
 	}
 }
 
 type getServiceHandler struct {
-	log *slog.Logger
-	db  *statedb.DB
-	fes statedb.Table[*loadbalancer.Frontend]
+	log         *slog.Logger
+	clusterInfo cmtypes.ClusterInfo
+	db          *statedb.DB
+	fes         statedb.Table[*loadbalancer.Frontend]
 }
 
 func (h *getServiceHandler) Handle(params serviceapi.GetServiceParams) middleware.Responder {
@@ -46,7 +50,9 @@ func (h *getServiceHandler) Handle(params serviceapi.GetServiceParams) middlewar
 		statedb.Collect(
 			statedb.Map(
 				h.fes.All(h.db.ReadTxn()),
-				(*loadbalancer.Frontend).ToModel,
+				func(fe *loadbalancer.Frontend) *models.Service {
+					return fe.ToModel(h.clusterInfo.Name)
+				},
 			),
 		),
 	)
