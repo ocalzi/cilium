@@ -832,6 +832,28 @@ func (s *xdsServer) RemoveAllNetworkPolicies() {
 	s.networkPolicyCache.Clear(NetworkPolicyTypeURL)
 }
 
+// InitializeEnvoyResources seeds the xDS resource caches with 'resources' without waiting for
+// any Envoy ACK/NACK and without acking any proxy ports. This is meant to be used once at
+// startup to populate the caches before the reconciler takes over.
+func (s *xdsServer) InitializeEnvoyResources(ctx context.Context, resources xds.Resources) error {
+	for _, r := range resources.Secrets {
+		s.upsertSecret(r.Name, r, nil)
+	}
+	for _, r := range resources.Endpoints {
+		s.upsertEndpoint(r.ClusterName, r, nil)
+	}
+	for _, r := range resources.Clusters {
+		s.upsertCluster(r.Name, r, nil)
+	}
+	for _, r := range resources.Routes {
+		s.upsertRoute(r.Name, r, nil)
+	}
+	for _, r := range resources.Listeners {
+		s.upsertListener(r.Name, r, nil, nil)
+	}
+	return nil
+}
+
 func (s *xdsServer) UpsertEnvoyResources(ctx context.Context, resources xds.Resources, waitGroup *completion.WaitGroup) error {
 	if option.Config.Debug {
 		msg := ""

@@ -1097,6 +1097,23 @@ func (s *adsServer) syncNPDSListeners(resources *xds.Resources) {
 	}
 }
 
+// InitializeEnvoyResources seeds the xDS cache with 'resources' without waiting for any Envoy
+// ACK/NACK and without acking any proxy ports. This is meant to be used once at startup to
+// populate the cache before the reconciler takes over.
+func (s *adsServer) InitializeEnvoyResources(ctx context.Context, resources xds.Resources) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	currentResources := s.cache.GetAllResources(localNodeID)
+	if currentResources == nil {
+		currentResources = &xds.Resources{}
+	}
+	merged := currentResources.DeepCopy()
+	mergeResources(merged, &resources)
+
+	return s.updateSnapshot(ctx, merged, "", nil, nil, nil)
+}
+
 func (s *adsServer) UpsertEnvoyResources(ctx context.Context, resources xds.Resources, wg *completion.WaitGroup) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
